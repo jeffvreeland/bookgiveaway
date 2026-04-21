@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contest Admin — Maxwell Book Giveaway</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --dark: #0d0f0e;
+    --card: #141917;
+    --border: #242c28;
+    --teal: #2dd4bf;
+    --green: #4ade80;
+    --muted: #8a8f8c;
+    --off-white: #f0ede8;
+    --red: #f87171;
+    --winner-bg: #0d2217;
+    --winner-border: #1a4d2e;
+  }
+  body {
+    background: var(--dark); color: var(--off-white);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 14px; line-height: 1.5;
+    min-height: 100vh; padding: 32px 24px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+  .page-header .subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; min-width: 140px;
+  }
+  .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .stat-card .value { font-size: 28px; font-weight: 700; color: var(--teal); line-height: 1.2; margin-top: 4px; }
+
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .btn {
+    padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    border: none; cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    color: #000;
+  }
+  .btn-danger {
+    background: #2a1010; color: var(--red);
+    border: 1px solid #3d1a1a;
+  }
+  .btn-secondary {
+    background: #1e2420; color: var(--off-white);
+    border: 1px solid var(--border);
+  }
+
+  .confirm-text {
+    font-size: 12px; color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .filter-bar {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .filter-bar input {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--off-white);
+    font-size: 13px; font-family: inherit; outline: none;
+    flex: 1; min-width: 200px;
+  }
+  .filter-bar input:focus { border-color: var(--teal); }
+  .filter-bar label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 10px 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #1a1e1c; transition: background 0.1s; }
+  tbody tr:hover { background: #141917; }
+  tbody tr.winner { background: var(--winner-bg); border-bottom-color: var(--winner-border); }
+  tbody tr.winner:hover { background: #0f2a1a; }
+  td { padding: 10px 12px; vertical-align: middle; }
+  td.name { font-weight: 500; color: var(--off-white); }
+  td.email { color: var(--muted); font-family: monospace; font-size: 12px; }
+  td.mobile { color: var(--muted); font-family: monospace; font-size: 12px; }
+  td.date { color: #5a6460; font-size: 12px; white-space: nowrap; }
+  td.winner-cell { white-space: nowrap; }
+
+  .winner-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    color: #000; font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 100px;
+    letter-spacing: 0.04em;
+  }
+  .no-entries {
+    text-align: center; padding: 60px 0; color: var(--muted);
+  }
+  .count-label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <div>
+      <h1>Maxwell Book Contest</h1>
+      <div class="subtitle">Admin Panel — jmtbook-april-2026</div>
+    </div>
+    <a href="?key=<%= key %>" class="btn btn-secondary" style="text-decoration:none">↻ Refresh</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="label">Total Entries</div>
+      <div class="value"><%= entries.length %></div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Winners Picked</div>
+      <div class="value" style="color: <%= winnerCount > 0 ? 'var(--green)' : 'var(--muted)' %>"><%= winnerCount %></div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Spots Remaining</div>
+      <div class="value" style="color: var(--off-white)"><%= Math.max(0, 10 - entries.length) %></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <form method="POST" action="/admin/pick?key=<%= encodeURIComponent(key) %>"
+          onsubmit="return confirm('Pick 10 random winners? This will replace any existing winners.')">
+      <button type="submit" class="btn btn-primary">🎲 Pick 10 Random Winners</button>
+    </form>
+    <% if (winnerCount > 0) { %>
+    <form method="POST" action="/admin/reset?key=<%= encodeURIComponent(key) %>"
+          onsubmit="return confirm('Clear all winners?')">
+      <button type="submit" class="btn btn-danger">✕ Clear Winners</button>
+    </form>
+    <% } %>
+  </div>
+  <% if (winnerCount > 0) { %>
+  <p class="confirm-text">Winners are highlighted in green below. Pick again to re-randomize.</p>
+  <% } %>
+
+  <% if (entries.length === 0) { %>
+    <div class="no-entries">No entries yet. Share the link and check back soon!</div>
+  <% } else { %>
+
+  <div class="filter-bar">
+    <input type="text" id="search" placeholder="Search by name, email, or phone…" oninput="filterTable()">
+    <label>
+      <input type="checkbox" id="winners-only" onchange="filterTable()">
+      Winners only
+    </label>
+  </div>
+  <p class="count-label" id="count-label">Showing all <%= entries.length %> entries</p>
+
+  <div class="table-wrap">
+    <table id="entries-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Mobile</th>
+          <th>Entered</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% entries.forEach((e, i) => { %>
+        <tr class="<%= e.is_winner ? 'winner' : '' %>" data-winner="<%= e.is_winner ? '1' : '0' %>">
+          <td style="color:var(--muted)"><%= entries.length - i %></td>
+          <td class="name"><%= e.name %></td>
+          <td class="email"><%= e.email %></td>
+          <td class="mobile"><%= e.mobile %></td>
+          <td class="date"><%= new Date(e.created_at).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) %></td>
+          <td class="winner-cell">
+            <% if (e.is_winner) { %>
+              <span class="winner-badge">🏆 Winner</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <% } %>
+
+</div>
+
+<script>
+function filterTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const winnersOnly = document.getElementById('winners-only').checked;
+  const rows = document.querySelectorAll('#entries-table tbody tr');
+  let visible = 0;
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const isWinner = row.dataset.winner === '1';
+    const show = text.includes(q) && (!winnersOnly || isWinner);
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  document.getElementById('count-label').textContent =
+    `Showing ${visible} of <%= entries.length %> entries`;
+}
+</script>
+</body>
+</html>
