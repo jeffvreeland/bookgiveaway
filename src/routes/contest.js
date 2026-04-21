@@ -81,16 +81,28 @@ router.post('/enter', async (req, res) => {
 });
 
 async function sendToGHL(firstName, lastName, email, phone) {
-  const res = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
+  const headers = {
+    'Authorization': `Bearer ${GHL_TOKEN}`,
+    'Version': '2021-07-28',
+    'Content-Type': 'application/json',
+  };
+
+  // Step 1: upsert contact (no tags — avoids overwriting existing ones)
+  const upsertRes = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GHL_TOKEN}`,
-      'Version': '2021-07-28',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ locationId: GHL_LOCATION, firstName, lastName, email, phone, tags: [GHL_TAG] }),
+    headers,
+    body: JSON.stringify({ locationId: GHL_LOCATION, firstName, lastName, email, phone }),
   });
-  if (!res.ok) throw new Error(`GHL ${res.status}: ${await res.text()}`);
+  if (!upsertRes.ok) throw new Error(`GHL upsert ${upsertRes.status}: ${await upsertRes.text()}`);
+  const { contact } = await upsertRes.json();
+
+  // Step 2: add tag without touching existing tags
+  const tagRes = await fetch(`https://services.leadconnectorhq.com/contacts/${contact.id}/tags`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ tags: [GHL_TAG] }),
+  });
+  if (!tagRes.ok) throw new Error(`GHL tag ${tagRes.status}: ${await tagRes.text()}`);
 }
 
 // ── Admin — view entries ──────────────────────────────────────────────────────
